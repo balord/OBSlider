@@ -10,6 +10,7 @@
 
 @interface OBSlider ()
 
+@property (assign, nonatomic, readwrite) NSUInteger scrubbingSpeedChangePosIndex;
 @property (assign, nonatomic, readwrite) float scrubbingSpeed;
 @property (assign, nonatomic, readwrite) float realPositionValue;
 @property (assign, nonatomic) CGPoint beganTrackingLocation;
@@ -24,6 +25,8 @@
 
 @implementation OBSlider
 
+@synthesize delegate;
+@synthesize scrubbingSpeedChangePosIndex = _scrubbingSpeedChangePosIndex;
 @synthesize scrubbingSpeed = _scrubbingSpeed;
 @synthesize scrubbingSpeeds = _scrubbingSpeeds;
 @synthesize scrubbingSpeedChangePositions = _scrubbingSpeedChangePositions;
@@ -38,6 +41,7 @@
         self.scrubbingSpeeds = [self defaultScrubbingSpeeds];
         self.scrubbingSpeedChangePositions = [self defaultScrubbingSpeedChangePositions];
         self.scrubbingSpeed = [[self.scrubbingSpeeds objectAtIndex:0] floatValue];
+        self.scrubbingSpeedChangePosIndex = 0;
     }
     return self;
 }
@@ -63,6 +67,7 @@
         }
         
         self.scrubbingSpeed = [[self.scrubbingSpeeds objectAtIndex:0] floatValue];
+        self.scrubbingSpeedChangePosIndex = 0;
     }
     return self;
 }
@@ -97,6 +102,21 @@
 												 thumbRect.origin.y + thumbRect.size.height / 2.0f); 
         self.realPositionValue = self.value;
     }
+    else
+    {
+        // notify delegate if just the track was touched
+        CGPoint touchPoint = [touch locationInView:self];
+        
+        CGRect thumbRect = [self thumbRectForBounds:self.bounds
+                                          trackRect:[self trackRectForBounds:self.bounds]
+                                              value:self.value];
+        if ( CGRectContainsPoint( thumbRect, touchPoint ) == false ) {
+            if ([self.delegate respondsToSelector:@selector(sliderDidReceiveTouchOnTrackOnly:)]) {
+                [self.delegate sliderDidReceiveTouchOnTrackOnly:self];
+            }
+        }
+        
+    }
     return beginTracking;
 }
 
@@ -110,11 +130,12 @@
         
         // Find the scrubbing speed that curresponds to the touch's vertical offset
         CGFloat verticalOffset = fabsf(currentLocation.y - self.beganTrackingLocation.y);
-        NSUInteger scrubbingSpeedChangePosIndex = [self indexOfLowerScrubbingSpeed:self.scrubbingSpeedChangePositions forOffset:verticalOffset];        
-        if (scrubbingSpeedChangePosIndex == NSNotFound) {
-            scrubbingSpeedChangePosIndex = [self.scrubbingSpeeds count];
+        _scrubbingSpeedChangePosIndex = [self indexOfLowerScrubbingSpeed:self.scrubbingSpeedChangePositions forOffset:verticalOffset];
+        if (_scrubbingSpeedChangePosIndex == NSNotFound) {
+            _scrubbingSpeedChangePosIndex = [self.scrubbingSpeeds count];
         }
-        self.scrubbingSpeed = [[self.scrubbingSpeeds objectAtIndex:scrubbingSpeedChangePosIndex - 1] floatValue];
+        self.scrubbingSpeed = [[self.scrubbingSpeeds objectAtIndex:_scrubbingSpeedChangePosIndex - 1] floatValue];
+        self.scrubbingSpeedChangePosIndex = [self indexOfLowerScrubbingSpeed:self.scrubbingSpeedChangePositions forOffset:verticalOffset];
          
         CGRect trackRect = [self trackRectForBounds:self.bounds];
         self.realPositionValue = self.realPositionValue + (self.maximumValue - self.minimumValue) * (trackingOffset / trackRect.size.width);
@@ -142,6 +163,7 @@
     {
         self.scrubbingSpeed = [[self.scrubbingSpeeds objectAtIndex:0] floatValue];
         [self sendActionsForControlEvents:UIControlEventValueChanged];
+        self.scrubbingSpeedChangePosIndex = 0;
     }
 }
 
@@ -161,6 +183,29 @@
     return NSNotFound; 
 }
 
+
+- (void)setScrubbingSpeedChangePosIndex:(NSUInteger)scrubbingSpeedChangePosIndex {
+    if (_scrubbingSpeedChangePosIndex == scrubbingSpeedChangePosIndex) {
+        return;
+    }
+    
+    if (scrubbingSpeedChangePosIndex == NSNotFound) {
+        scrubbingSpeedChangePosIndex = [self.scrubbingSpeeds count] - 1;
+    }
+    
+    
+    _scrubbingSpeedChangePosIndex = scrubbingSpeedChangePosIndex;
+    self.scrubbingSpeed = [[self.scrubbingSpeeds objectAtIndex:_scrubbingSpeedChangePosIndex] floatValue];
+    
+    
+    // Notify delegates
+    if ([self.delegate respondsToSelector:@selector(slider:didChangeToSpeedIndex:whileTracking:)]) {
+        [self.delegate slider:self didChangeToSpeedIndex:_scrubbingSpeedChangePosIndex whileTracking:self.tracking];
+    }
+    if ([self.delegate respondsToSelector:@selector(slider:didChangeToSpeed:whileTracking:)]) {
+        [self.delegate slider:self didChangeToSpeed:[[self.scrubbingSpeeds objectAtIndex:_scrubbingSpeedChangePosIndex] floatValue] whileTracking:self.tracking];
+    }
+}
 
 #pragma mark - Default values
 
