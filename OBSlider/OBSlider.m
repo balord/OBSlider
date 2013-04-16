@@ -39,6 +39,9 @@
     if (self != nil)
     {
         self.scrubbingSpeeds = [self defaultScrubbingSpeeds];
+#ifndef RELEASE
+        NSAssert( self.scrubbingSpeeds.count, @"OBSlider scrubbingSpeeds must have a valid count.");
+#endif
         self.scrubbingSpeedChangePositions = [self defaultScrubbingSpeedChangePositions];
         self.scrubbingSpeed = [[self.scrubbingSpeeds objectAtIndex:0] floatValue];
         self.scrubbingSpeedChangePosIndex = 0;
@@ -132,9 +135,9 @@
         CGFloat verticalOffset = fabsf(currentLocation.y - self.beganTrackingLocation.y);
         _scrubbingSpeedChangePosIndex = [self indexOfLowerScrubbingSpeed:self.scrubbingSpeedChangePositions forOffset:verticalOffset];
         if (_scrubbingSpeedChangePosIndex == NSNotFound) {
-            _scrubbingSpeedChangePosIndex = [self.scrubbingSpeeds count];
+            _scrubbingSpeedChangePosIndex = self.scrubbingSpeeds.count - 1;
         }
-        self.scrubbingSpeed = [[self.scrubbingSpeeds objectAtIndex:_scrubbingSpeedChangePosIndex - 1] floatValue];
+        self.scrubbingSpeed = [[self.scrubbingSpeeds objectAtIndex:_scrubbingSpeedChangePosIndex] floatValue];
         self.scrubbingSpeedChangePosIndex = [self indexOfLowerScrubbingSpeed:self.scrubbingSpeedChangePositions forOffset:verticalOffset];
          
         CGRect trackRect = [self trackRectForBounds:self.bounds];
