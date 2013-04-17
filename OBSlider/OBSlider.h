@@ -11,7 +11,7 @@
 
 @interface OBSlider : UISlider
 
-@property (nonatomic, weak) id <OBSliderDelegate>delegate;
+@property (nonatomic, weak) id<OBSliderDelegate> delegate;
 @property (assign, nonatomic, readonly) float scrubbingSpeed;
 @property (strong, nonatomic) NSArray *scrubbingSpeeds;
 @property (strong, nonatomic) NSArray *scrubbingSpeedChangePositions;
