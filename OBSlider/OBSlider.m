@@ -101,8 +101,8 @@
 		CGRect thumbRect = [self thumbRectForBounds:self.bounds 
 										  trackRect:[self trackRectForBounds:self.bounds]
 											  value:self.value];
-        self.beganTrackingLocation = CGPointMake(thumbRect.origin.x + thumbRect.size.width / 2.0f, 
-												 thumbRect.origin.y + thumbRect.size.height / 2.0f); 
+        self.beganTrackingLocation = CGPointMake( CGRectGetMinX( thumbRect ) + CGRectGetWidth( thumbRect ) / 2.0f,
+												 CGRectGetMinY( thumbRect ) + CGRectGetHeight( thumbRect ) / 2.0f );
         self.realPositionValue = self.value;
     }
     else
