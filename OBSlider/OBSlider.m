@@ -132,7 +132,11 @@
         CGFloat trackingOffset = currentLocation.x - previousLocation.x;
         
         // Find the scrubbing speed that curresponds to the touch's vertical offset
+#if CGFLOAT_IS_DOUBLE
+        CGFloat verticalOffset = fabs(currentLocation.y - self.beganTrackingLocation.y);
+#else
         CGFloat verticalOffset = fabsf(currentLocation.y - self.beganTrackingLocation.y);
+#endif
         _scrubbingSpeedChangePosIndex = [self indexOfLowerScrubbingSpeed:self.scrubbingSpeedChangePositions forOffset:verticalOffset];
         if (_scrubbingSpeedChangePosIndex == NSNotFound) {
             _scrubbingSpeedChangePosIndex = self.scrubbingSpeeds.count - 1;
@@ -149,7 +153,11 @@
              ((self.beganTrackingLocation.y > currentLocation.y) && (currentLocation.y > previousLocation.y)) )
             {
             // We are getting closer to the slider, go closer to the real location
-			thumbAdjustment = (self.realPositionValue - self.value) / (1 + fabsf(currentLocation.y - self.beganTrackingLocation.y));
+#if CGFLOAT_IS_DOUBLE
+			thumbAdjustment = (self.realPositionValue - self.value) / (1 + fabs(currentLocation.y - self.beganTrackingLocation.y));
+#else
+            thumbAdjustment = (self.realPositionValue - self.value) / (1 + fabsf(currentLocation.y - self.beganTrackingLocation.y));
+#endif
         }
 		self.value += valueAdjustment + thumbAdjustment;
 
