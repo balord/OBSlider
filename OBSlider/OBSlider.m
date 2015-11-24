@@ -7,7 +7,6 @@
 
 #import "OBSlider.h"
 
-
 @interface OBSlider ()
 
 @property (assign, nonatomic, readwrite) NSUInteger scrubbingSpeedChangePosIndex;
@@ -22,18 +21,9 @@
 @end
 
 
-
 @implementation OBSlider
 
-@synthesize delegate;
-@synthesize scrubbingSpeedChangePosIndex = _scrubbingSpeedChangePosIndex;
-@synthesize scrubbingSpeed = _scrubbingSpeed;
-@synthesize scrubbingSpeeds = _scrubbingSpeeds;
-@synthesize scrubbingSpeedChangePositions = _scrubbingSpeedChangePositions;
-@synthesize beganTrackingLocation = _beganTrackkingLocation;
-@synthesize realPositionValue = _realPositionValue;
-
-- (id)initWithFrame:(CGRect)frame
+- (instancetype)initWithFrame:(CGRect)frame
 {
     self = [super initWithFrame:frame];
     if (self != nil)
@@ -43,12 +33,11 @@
         NSAssert( self.scrubbingSpeeds.count, @"OBSlider scrubbingSpeeds must have a valid count.");
 #endif
         self.scrubbingSpeedChangePositions = [self defaultScrubbingSpeedChangePositions];
-        self.scrubbingSpeed = [[self.scrubbingSpeeds objectAtIndex:0] floatValue];
+        self.scrubbingSpeed = [self.scrubbingSpeeds[0] floatValue];
         self.scrubbingSpeedChangePosIndex = 0;
     }
     return self;
 }
-
 
 #pragma mark - NSCoding
 
@@ -69,7 +58,7 @@
             self.scrubbingSpeedChangePositions = [self defaultScrubbingSpeedChangePositions];
         }
         
-        self.scrubbingSpeed = [[self.scrubbingSpeeds objectAtIndex:0] floatValue];
+        self.scrubbingSpeed = [self.scrubbingSpeeds[0] floatValue];
         self.scrubbingSpeedChangePosIndex = 0;
     }
     return self;
@@ -85,9 +74,7 @@
     // No need to archive self.scrubbingSpeed as it is calculated from the arrays on init
 }
 
-
-#pragma mark -
-#pragma mark Touch tracking
+#pragma mark - Touch tracking
 
 - (BOOL)beginTrackingWithTouch:(UITouch *)touch withEvent:(UIEvent *)event
 {
@@ -101,8 +88,8 @@
 		CGRect thumbRect = [self thumbRectForBounds:self.bounds 
 										  trackRect:[self trackRectForBounds:self.bounds]
 											  value:self.value];
-        self.beganTrackingLocation = CGPointMake( CGRectGetMinX( thumbRect ) + CGRectGetWidth( thumbRect ) / 2.0f,
-												 CGRectGetMinY( thumbRect ) + CGRectGetHeight( thumbRect ) / 2.0f );
+        self.beganTrackingLocation = CGPointMake(thumbRect.origin.x + thumbRect.size.width / 2.0f, 
+												 thumbRect.origin.y + thumbRect.size.height / 2.0f); 
         self.realPositionValue = self.value;
     }
     else
@@ -132,32 +119,24 @@
         CGFloat trackingOffset = currentLocation.x - previousLocation.x;
         
         // Find the scrubbing speed that curresponds to the touch's vertical offset
-#if CGFLOAT_IS_DOUBLE
         CGFloat verticalOffset = fabs(currentLocation.y - self.beganTrackingLocation.y);
-#else
-        CGFloat verticalOffset = fabsf(currentLocation.y - self.beganTrackingLocation.y);
-#endif
-        _scrubbingSpeedChangePosIndex = [self indexOfLowerScrubbingSpeed:self.scrubbingSpeedChangePositions forOffset:verticalOffset];
-        if (_scrubbingSpeedChangePosIndex == NSNotFound) {
-            _scrubbingSpeedChangePosIndex = self.scrubbingSpeeds.count - 1;
+        NSUInteger scrubbingSpeedChangePosIndex = [self indexOfLowerScrubbingSpeed:self.scrubbingSpeedChangePositions forOffset:verticalOffset];        
+        if (scrubbingSpeedChangePosIndex == NSNotFound) {
+            scrubbingSpeedChangePosIndex = [self.scrubbingSpeeds count];
         }
-        self.scrubbingSpeed = [[self.scrubbingSpeeds objectAtIndex:_scrubbingSpeedChangePosIndex] floatValue];
-        self.scrubbingSpeedChangePosIndex = [self indexOfLowerScrubbingSpeed:self.scrubbingSpeedChangePositions forOffset:verticalOffset];
+        self.scrubbingSpeed = [self.scrubbingSpeeds[scrubbingSpeedChangePosIndex - 1] floatValue];
+        self.scrubbingSpeedChangePosIndex = scrubbingSpeedChangePosIndex;
          
         CGRect trackRect = [self trackRectForBounds:self.bounds];
-        self.realPositionValue = self.realPositionValue + (self.maximumValue - self.minimumValue) * (trackingOffset / trackRect.size.width);
+        self.realPositionValue = self.realPositionValue + (self.maximumValue - self.minimumValue) * (float)(trackingOffset / trackRect.size.width);
 		
-		CGFloat valueAdjustment = self.scrubbingSpeed * (self.maximumValue - self.minimumValue) * (trackingOffset / trackRect.size.width);
-		CGFloat thumbAdjustment = 0.0f;
+		float valueAdjustment = self.scrubbingSpeed * (self.maximumValue - self.minimumValue) * (float)(trackingOffset / trackRect.size.width);
+		float thumbAdjustment = 0.0f;
         if ( ((self.beganTrackingLocation.y < currentLocation.y) && (currentLocation.y < previousLocation.y)) ||
              ((self.beganTrackingLocation.y > currentLocation.y) && (currentLocation.y > previousLocation.y)) )
             {
             // We are getting closer to the slider, go closer to the real location
-#if CGFLOAT_IS_DOUBLE
-			thumbAdjustment = (self.realPositionValue - self.value) / (1 + fabs(currentLocation.y - self.beganTrackingLocation.y));
-#else
-            thumbAdjustment = (self.realPositionValue - self.value) / (1 + fabsf(currentLocation.y - self.beganTrackingLocation.y));
-#endif
+			thumbAdjustment = (self.realPositionValue - self.value) / (float)(1 + fabs(currentLocation.y - self.beganTrackingLocation.y));
         }
 		self.value += valueAdjustment + thumbAdjustment;
 
@@ -172,12 +151,11 @@
 {
     if (self.tracking) 
     {
-        self.scrubbingSpeed = [[self.scrubbingSpeeds objectAtIndex:0] floatValue];
+        self.scrubbingSpeed = [self.scrubbingSpeeds[0] floatValue];
         [self sendActionsForControlEvents:UIControlEventValueChanged];
         self.scrubbingSpeedChangePosIndex = 0;
     }
 }
-
 
 #pragma mark - Helper methods
 
@@ -186,7 +164,7 @@
 - (NSUInteger) indexOfLowerScrubbingSpeed:(NSArray*)scrubbingSpeedPositions forOffset:(CGFloat)verticalOffset 
 {
     for (NSUInteger i = 0; i < [scrubbingSpeedPositions count]; i++) {
-        NSNumber *scrubbingSpeedOffset = [scrubbingSpeedPositions objectAtIndex:i];
+        NSNumber *scrubbingSpeedOffset = scrubbingSpeedPositions[i];
         if (verticalOffset < [scrubbingSpeedOffset floatValue]) {
             return i;
         }
@@ -223,22 +201,12 @@
 // Used in -initWithFrame: and -initWithCoder:
 - (NSArray *) defaultScrubbingSpeeds
 {
-    return [NSArray arrayWithObjects:
-            [NSNumber numberWithFloat:1.0f],
-            [NSNumber numberWithFloat:0.5f],
-            [NSNumber numberWithFloat:0.25f],
-            [NSNumber numberWithFloat:0.1f],
-            nil];
+    return @[ @1.0f, @0.5f, @0.25f, @0.1f ];
 }
 
 - (NSArray *) defaultScrubbingSpeedChangePositions
 {
-    return [NSArray arrayWithObjects:
-            [NSNumber numberWithFloat:0.0f],
-            [NSNumber numberWithFloat:50.0f],
-            [NSNumber numberWithFloat:100.0f],
-            [NSNumber numberWithFloat:150.0f],
-            nil];
+    return @[ @0.0f, @50.0f, @100.0f, @150.0f ];
 }
 
 @end
