@@ -122,9 +122,9 @@
         CGFloat verticalOffset = fabs(currentLocation.y - self.beganTrackingLocation.y);
         NSUInteger scrubbingSpeedChangePosIndex = [self indexOfLowerScrubbingSpeed:self.scrubbingSpeedChangePositions forOffset:verticalOffset];        
         if (scrubbingSpeedChangePosIndex == NSNotFound) {
-            scrubbingSpeedChangePosIndex = [self.scrubbingSpeeds count];
+            scrubbingSpeedChangePosIndex = ( [self.scrubbingSpeeds count] ? [self.scrubbingSpeeds count] - 1 : 0 );
         }
-        self.scrubbingSpeed = [self.scrubbingSpeeds[scrubbingSpeedChangePosIndex - 1] floatValue];
+        self.scrubbingSpeed = [self.scrubbingSpeeds[scrubbingSpeedChangePosIndex] floatValue];
         self.scrubbingSpeedChangePosIndex = scrubbingSpeedChangePosIndex;
          
         CGRect trackRect = [self trackRectForBounds:self.bounds];
